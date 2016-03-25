@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Title</title>
+    <title>Extension of DIVA to higher dimensions (diva-nd)</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <style type="text/css">
       /* Slideshow styles */
@@ -12,16 +12,21 @@
 
 class: center, middle
 
-# divand
+# Extension of DIVA to higher dimensions (diva-nd)
 Alexander Barth
 ---
 
+class: middle
+
 # Objective
 
-* 
+* Introduction to the matlab/octave code of diva-nd
+* Show how to make a 2D analysis (longitude,latitude)
+* How to handle periodic boundary conditions
+* Show how to make a 3D analysis (longitude,latitude,time)
 
 ---
-# ARGO
+# Example data set: ARGO
 
 * Data file is `argo_data.mat`
 * Data can be loaded with:
@@ -34,13 +39,12 @@ where you have to use the appropriate file path and replace `/path/to`.
 * Use `whos` to list the loaded variables:
 
 ```
-   Attr Name             Size                     Bytes  Class
-   ==== ====             ====                     =====  ===== 
-        Tobs             1x1444                   11552  double
-        latobs           1x1444                   11552  double
-        lonobs           1x1444                   11552  double
-        timeobs          1x1444                   11552  double
-
+   Attr Name         Size                     Bytes  Class
+   ==== ====         ====                     =====  =====
+        Tobs         1x11000                  88000  double
+        latobs       1x11000                  88000  double
+        lonobs       1x11000                  88000  double
+        timeobs      1x11000                  88000  double
 ```
 
  * lonobs: the longitude of the observations (in degrees North)
@@ -50,7 +54,7 @@ where you have to use the appropriate file path and replace `/path/to`.
 
 ---
 
-* The time in matlab/octave can be manupilated with the commands `datenum`, `datevec`, and `datestr` (use e.g. `help datenum`).
+* The time in matlab/octave can be manipulated with the commands `datenum`, `datevec`, and `datestr` (use e.g. `help datenum`).
 * What is the time range of the observations?
 
 ```matlab
@@ -58,7 +62,7 @@ datestr(min(timeobs))
 datestr(max(timeobs))
 ```
 ---
-* Fisualize the data
+* Visualize the data
 
 <div style="text-align:center">
 <img src="Fig/data_distrib1.png" width="700">
@@ -86,28 +90,14 @@ colorbar
 ---
 # Outliers
 
-* There are some obvious outliers 
-* How to remove these obvious outliers? Update `lonobs`, `latobs`, `timeobs` and `Tobs`.
+* There are some obvious outliers
+* How to remove these obvious outliers?
+ * using range checks
+ * consistency with near-by observations
+ * consistency with a climatology
+ * ...
 
---
-
-```matlab
-keep = true(size(Tobs));
-keep(Tobs > 50) = false;
-keep(Tobs < 20 & abs(latobs) < 20) = false;
-
-lonobs = lonobs(keep);
-latobs = latobs(keep);
-timeobs = timeobs(keep);
-Tobs = Tobs(keep);
-```
----
-
-* Visualize the dataset without the outliers 
-<div style="text-align:center">
-<img src="Fig/data_distrib_clean.png" width="700">
-</div>
-
+* We will make an analysis with low signal-to-noise-ratio and exclude observations with a too large deviation from this analysis
 
 ---
 # Bathymetry
@@ -162,7 +152,7 @@ pcolor(lon,lat,double(mask)), shading flat, colorbar
 * `pm` and `pn` are in meters^-1
 * `pm` inceases toward the poles and `pn` is just constant for a spherical mesh.
 <div style="text-align:center">
-<img src="Fig/pm.png" width="500">
+<img src="Fig/pm.png" width="400">
 </div>
 
 ```matlab
@@ -185,7 +175,7 @@ Tanom = Tobs - mean(Tobs);
 len = 3000e3;
 
 % signal-to-noise ratio
-lambda = 10;
+lambda = 1;
 
 % make analysis
 Ta =  divand(mask,{pm,pn},{lon,lat},{lonobs,latobs},...
@@ -203,15 +193,6 @@ Ta =  divand(mask,{pm,pn},{lon,lat},{lonobs,latobs},...
 </div>
 
 ---
-# Issue periodic boundaries
-
-<div style="text-align:center">
-<img src="Fig/periodicity.png" width="700">
-</div>
-
-
-
----
 
 * Add the mean back
 
@@ -222,6 +203,220 @@ Ta2 = Tam + Tmean;
 <img src="Fig/temp_analysis.png" width="700">
 </div>
 
+
+---
+# Issue at periodic boundaries
+
+<div style="text-align:center">
+<img src="Fig/periodicity.png" width="500">
+</div>
+
+```matlab
+Tam =  divand(mask,{pm,pn},{lon,lat},{lonobs,latobs},Tanom,...
+  len,lambda,'moddim',[360 0]);
+```
+
+---
+# Difference between observation and analysis
+
+* Interpolate the analysis at the location of the observations and compute the difference:
+
+```matlab
+Tanom2 = Tobs - interpn(lon,lat,Ta2,lonobs,latobs);
+```
+* How to take into account that longitude dimension is periodic?
+
+--
+```matlab
+Tanom2 = Tobs - interpn([lon(end,:)-360; lon],...
+   [lat(end,:); lat], ...
+   [Ta2(end,:); Ta2],lonobs,latobs);
+```
+---
+* Visualize the anomalies:
+
+<div style="text-align:center">
+<img src="Fig/Tanom2.png" width="500">
+</div>
+
+--
+
+```matlab
+ scatter(lonobs(~isnan(Tanom2)),latobs(~isnan(Tanom2)),5,...
+    Tanom2(~isnan(Tanom2)),'filled')
+ colorbar
+```
+
+---
+# Remove outliers
+
+* Keep only data where the anomaly is smaller than 10 degrees
+
+--
+```matlab
+keep = abs(Tanom2) < 10 | isnan(Tanom2);
+```
+
+* Show excluded data:
+
+<div style="text-align:center">
+<img src="Fig/bad.png" width="300">
+</div>
+
+--
+
+```matlab
+scatter(lonobs(~keep),latobs(~keep),5,Tobs(~keep),'filled')
+colorbar
+```
+
+---
+# Retained data
+* Show keep data:
+
+<div style="text-align:center">
+<img src="Fig/good.png" width="500">
+</div>
+
+--
+```matlab
+scatter(lonobs(keep),latobs(keep),5,Tobs(keep),'filled')
+colorbar
+```
+
+---
+
+* Update `lonobs`, `latobs`, `timeobs`, `Tobs`
+
+--
+```matlab
+lonobs = lonobs(keep);
+latobs = latobs(keep);
+timeobs = timeobs(keep);
+Tobs = Tobs(keep);
+```
+
+* re-do the analysis with clean data, and a signal-to-noise ratio of 10, add the mean back
+
+--
+
+```matlab
+Tmean = mean(Tobs);
+Tanom = Tobs - mean(Tobs);
+
+% signal-to-noise ratio
+lambda = 10;
+
+% make analysis
+
+Tam =  divand(mask,{pm,pn},{lon,lat},{lonobs,latobs},Tanom,len,...
+  lambda,'moddim',[360 0]);
+
+% add mean back
+Ta2 = Tam + Tmean;
+```
+
+---
+# 3D analysis
+
+* We use the 2D analysis as a background estimate
+* Compute the anomalies compared to this background estimate
+
+--
+
+```matlab
+Tanom2 = Tobs - interpn([lon(end,:)-360; lon],[lat(end,:); lat],...
+  [Ta2(end,:); Ta2],lonobs,latobs);
+```
+* Time dimensions
+
+```matlab
+time = datenum(2016,1,1):10:datenum(2016,2,5);
+N = length(time);
+```
+
+* Extend the `mask`, `lon` and `lat` with the extra time dimensions (calling the variables `mask3d`, `lon3d` and `lat3d`.)
+
+--
+
+```matlab
+mask3d = repmat(mask,[1 1 N]);
+lon3d = repmat(lon,[1 1 N]);
+lat3d = repmat(lat,[1 1 N]);
+```
+---
+
+* Define a variable `time3d` which has the same size as the other 3d variables and which varies only over the 3rd dimensions as the variable `time`.
+
+--
+
+```matlab
+time3d = repmat(reshape(time,[1 1 N]),[size(lon,1) size(lon,2) 1]);
+```
+
+* Creating the corresponding variables for the metric `pm3d`, `pn3d` and `po3d`:
+
+--
+```matlab
+pm3d = repmat(pm,[1 1 N]); % m^-1
+pn3d = repmat(pn,[1 1 N]); % m^-1
+po3d = ones(size(lon3d))/(time(2)-time(1)); % day^-1
+```
+
+* Set the spatial and temporal correlation length and the signal-to-noise ratio
+
+```matlab
+% temporal correlation length (same units as 1/po)
+len3 = 1000e3;
+lentime = 15;
+
+lambda = 5;
+```
+
+---
+# Make the 3d analysis
+
+* Launch divand with these variables
+
+```matlab
+Ta3 =  divand(mask3d,{pm3d,pn3d,po3d},{lon3d,lat3d,time3d},...
+    {lonobs,latobs,timeobs},...
+    Tanom2,{len3,len3,lentime},lambda);
+```
+
+* Add the mean back
+
+--
+
+```matlab
+Ta3 = Ta3 + repmat(Ta2,[1 1 N]);
+```
+
+* Plot all time instances (with the same colorbar)
+
+--
+
+```matlab
+ca = [min(Ta3(:)) max(Ta3(:))];
+for i = 1:N
+  clf
+  pcolor(lon,lat,Ta3(:,:,i)), shading flat,
+  caxis(ca); colorbar
+  title(datestr(time(i)))
+
+  print('-dpng',['Fig/temp_analysis' ...
+     datestr(time(i),'yyyy-mm-dd') '.png']);
+end
+```
+
+---
+# Additional tasks
+
+* Put all the command in a script (except for the plots) to automate the analysis
+* Try different parameters (correlation length, signal-to-noise-ration, outlier threshold)
+* Cross-validation:
+ * exclude a random 10% from the data and compare the analysis to the withheld data
+ * optimize the analysis parameters by minimizing the difference
 
     </textarea>
     <script src="remark-latest.min.js" type="text/javascript"></script>
@@ -249,3 +444,16 @@ Ta2 = Tam + Tmean;
     </script>
   </body>
 </html>
+
+<!--  LocalWords:  Slideshow nd matlab argo whos Attr Tobs latobs UTC
+ -->
+<!--  LocalWords:  lonobs timeobs datenum datevec datestr colorbar nc
+ -->
+<!--  LocalWords:  caxis Outliers outliers Bathymetry GEBCO ncdisp pn
+ -->
+<!--  LocalWords:  bathymetry ncread lon ndgrid pcolor divand Tmean
+ -->
+<!--  LocalWords:  Tanom len moddim interpn isnan repmat po lentime
+ -->
+<!--  LocalWords:  clf dpng yyyy png outlier
+ -->
