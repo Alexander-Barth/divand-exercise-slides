@@ -90,7 +90,7 @@ colorbar
 ```
 ---
 
-* Force color-bar to 0 - 30 degree Celsius.
+* Force color-bar to 0 - 30 degrees Celsius.
 <div style="text-align:center">
 <img src="Fig/data_distrib2.png" width="700">
 </div>
@@ -118,7 +118,7 @@ colorbar
 # Bathymetry
 
 * We use the global GEBCO bathymetry
-* Reduced to a resolution to 1°
+* Reduced to a resolution of 1°
 * Load the bathymetry (file `diva_bath.nc`) and visualize it.
 * Hint: use `ncdisp` to list the variables names and `ncread` to load the variables (including longitude and latitude).
 
@@ -378,7 +378,7 @@ pn3d = repmat(pn,[1 1 N]); % m^-1
 po3d = ones(size(lon3d))/(time(2)-time(1)); % day^-1
 ```
 
-* Set the spatial and temporal correlation length and the signal-to-noise ratio
+* Set the spatial and temporal correlation lengths and the signal-to-noise ratio
 
 ```matlab
 % temporal correlation length (same units as 1/po)
@@ -428,7 +428,7 @@ end
 # Additional tasks
 
 * Put all the command in a script (except for the plots) to automate the analysis
-* Try different parameters (correlation length, signal-to-noise-ration, outlier threshold)
+* Try different parameters (correlation length, signal-to-noise-ratio, outliers threshold)
 * Cross-validation:
  * exclude a random 10% from the data and compare the analysis to the withheld data
  * optimize the analysis parameters by minimizing the difference
