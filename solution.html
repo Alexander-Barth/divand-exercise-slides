@@ -39,7 +39,7 @@ Alexander Barth
 
 --
 ```matlab
-scatter(lonobs,latobs,5,Tobs,'filled')
+myscatter(lonobs,latobs,5,Tobs,'filled')
 colorbar
 ```
 ---
@@ -51,7 +51,7 @@ colorbar
 
 --
 ```matlab
-scatter(lonobs,latobs,5,Tobs,'filled')
+myscatter(lonobs,latobs,5,Tobs,'filled')
 caxis([0 30]) % fix the color-bar range
 colorbar
 ```
@@ -166,7 +166,7 @@ Ta =  divand(mask,{pm,pn},{lon,lat},{lonobs,latobs},...
 * Add the mean back
 
 ```matlab
-Ta2 = Tam + Tmean;
+Ta2 = Ta + Tmean;
 ```
 <div style="text-align:center">
 <img src="Fig/temp_analysis.png" width="700">
@@ -211,7 +211,7 @@ Tanom2 = Tobs - interpn([lon(end,:)-360; lon],...
 --
 
 ```matlab
- scatter(lonobs(~isnan(Tanom2)),latobs(~isnan(Tanom2)),5,...
+ myscatter(lonobs(~isnan(Tanom2)),latobs(~isnan(Tanom2)),5,...
     Tanom2(~isnan(Tanom2)),'filled')
  colorbar
 ```
@@ -235,7 +235,7 @@ keep = abs(Tanom2) < 10 | isnan(Tanom2);
 --
 
 ```matlab
-scatter(lonobs(~keep),latobs(~keep),5,Tobs(~keep),'filled')
+myscatter(lonobs(~keep),latobs(~keep),5,Tobs(~keep),'filled')
 colorbar
 ```
 
@@ -249,7 +249,7 @@ colorbar
 
 --
 ```matlab
-scatter(lonobs(keep),latobs(keep),5,Tobs(keep),'filled')
+myscatter(lonobs(keep),latobs(keep),5,Tobs(keep),'filled')
 colorbar
 ```
 
