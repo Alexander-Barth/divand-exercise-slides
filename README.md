@@ -1,3 +1,5 @@
 # divand-slides
 Slides about divand available at
-https://cdn.rawgit.com/Alexander-Barth/divand-slides/master/index.html
+http://alexander-barth.github.io/divand-slides/
+
+If you have downloaded the slides, you can open the file index.html with Firefox or Google Chrome.
